@@ -1,0 +1,918 @@
+<title>Dojo · Protótipo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout: palco escuro com o celular no centro e o mapa de telas ao lado (embaixo no celular). O app tem visual único (vermelho/branco), igual ao Figma. */
+:root{
+  --stage:#141212; --stage-2:#1f1b1b; --stage-line:#3a3232; --stage-fg:#f3eded; --stage-muted:#a99d9d;
+  --r:#c40000; --r-2:#a30000; --r-soft:#fff1f1; --r-line:#f1c9c9;
+  --ink:#1a1a1a; --muted:#6b6b6b; --muted-2:#9a9a9a; --line:#e8e4e4; --bg:#fafafa; --w:#ffffff;
+  --gold:#e0a400; --green:#1f9d55;
+  --display:Anton,Impact,"Arial Narrow",sans-serif; --body:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --fz:1;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{background:var(--stage);color:var(--stage-fg);font-family:var(--body);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:inherit}
+button:focus-visible,[data-go]:focus-visible{outline:3px solid #ffb3b3;outline-offset:2px}
+input{font:inherit;color:inherit;border:0;outline:0;background:transparent;width:100%}
+
+.layout{display:flex;gap:40px;justify-content:center;align-items:flex-start;min-height:100%}
+.stage{flex:none;display:flex;justify-content:center}
+.phone-wrap{position:relative;border-radius:46px;box-shadow:0 0 0 10px #050505,0 0 0 11px #3b3333,0 30px 80px rgba(0,0,0,.6);overflow:hidden;background:#fff}
+#phone{width:390px;height:844px;position:relative;overflow:hidden;transform-origin:top left;background:#fff;color:var(--ink)}
+
+/* ---------- painel ---------- */
+.panel{width:300px;flex:none;display:flex;flex-direction:column;gap:18px;padding-top:8px}
+.brand{display:flex;align-items:center;gap:12px}
+.brand-logo{width:44px;height:44px;border-radius:12px;background:var(--r);display:flex;align-items:center;justify-content:center}
+.brand h1{font-family:var(--display);font-weight:400;font-size:28px;letter-spacing:2px;line-height:1}
+.brand p{font-size:12px;color:var(--stage-muted);margin-top:4px}
+.panel .hint{font-size:13px;color:var(--stage-muted);line-height:1.5}
+.grp h2{font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--stage-muted);font-weight:700;margin-bottom:6px}
+.grp ul{list-style:none;display:flex;flex-direction:column;gap:2px}
+.grp button{width:100%;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:8px;font-size:13.5px;color:var(--stage-fg)}
+.grp button:hover{background:var(--stage-2)}
+.grp button.cur{background:var(--r);color:#fff}
+.grp .n{font-variant-numeric:tabular-nums;color:var(--stage-muted);width:20px;font-size:12px}
+.grp button.cur .n{color:#ffd6d6}
+.new{margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.6px;color:#ffb3b3;border:1px solid #6b2a2a;border-radius:99px;padding:1px 7px}
+.grp button.cur .new{color:#fff;border-color:#fff6}
+.restart{border:1px solid var(--stage-line);border-radius:10px;padding:10px 14px;font-weight:600;font-size:13px;text-align:center}
+.restart:hover{background:var(--stage-2)}
+@media (max-width:760px){.layout{flex-direction:column;align-items:center;gap:28px}.panel{width:100%;max-width:420px}}
+
+/* ---------- app ---------- */
+.scr{position:absolute;inset:0;display:flex;flex-direction:column;background:var(--w);overflow:hidden}
+.scr[hidden]{display:none!important}
+.scr.in-r{animation:inR .28s ease-out}.scr.in-l{animation:inL .28s ease-out}.scr.in-f{animation:inF .25s ease-out}
+@keyframes inR{from{transform:translateX(40%);opacity:.3}to{transform:none;opacity:1}}
+@keyframes inL{from{transform:translateX(-30%);opacity:.3}to{transform:none;opacity:1}}
+@keyframes inF{from{opacity:0}to{opacity:1}}
+@media (prefers-reduced-motion:reduce){.scr.in-r,.scr.in-l,.scr.in-f{animation:none}}
+.red{background:var(--r);color:#fff}
+.anton{font-family:var(--display);font-weight:400;text-transform:uppercase;letter-spacing:.3px}
+.hd{padding:52px 20px 36px}
+.hd .bar{display:flex;align-items:center;justify-content:space-between;height:32px}
+.bk{width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;color:#fff}
+.bk.l{background:var(--bg);border:1px solid var(--line);color:var(--ink)}
+.mini{font-size:12px;font-weight:600}
+.ttl{font-family:var(--display);font-size:32px;line-height:1.04;text-transform:uppercase;margin-top:20px;letter-spacing:.3px}
+.steps{display:flex;gap:6px;margin-top:14px}.steps span{flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,.3)}.steps .on{background:#fff}
+.sheet{flex:1;background:var(--w);border-radius:24px 24px 0 0;margin-top:-18px;padding:22px 20px 0;display:flex;flex-direction:column;gap:12px;overflow:auto;position:relative;scrollbar-width:none}
+.sheet::-webkit-scrollbar{display:none}
+.foot{padding:12px 20px 30px;display:flex;flex-direction:column;gap:12px;align-items:stretch;background:var(--w)}
+.h2{font-size:18px;font-weight:700}
+.sub{font-size:13px;color:var(--muted);line-height:1.4}
+.lbl{font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px}
+.inp{border:1.5px solid var(--line);border-radius:12px;height:50px;padding:0 14px;display:flex;align-items:center;gap:8px;font-size:15px;background:var(--bg)}
+.inp:focus-within{border-color:var(--r);background:#fff}
+.inp input::placeholder{color:var(--muted-2)}
+.btn{height:54px;border-radius:14px;background:var(--r);color:#fff;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;text-align:center}
+.btn:active{transform:scale(.98)}
+.btn.w{background:#fff;color:var(--r)}
+.btn.o{background:#fff;color:var(--r);border:1.5px solid var(--r)}
+.btn.dash{background:transparent;color:var(--r);border:1.5px dashed var(--r);height:50px}
+.btn[disabled]{opacity:.4;pointer-events:none}
+.lnk{font-size:13px;color:var(--muted);text-align:center}.lnk b,.lnk.r{color:var(--r);font-weight:700}
+.row{display:flex;align-items:center;gap:12px}
+.grow{flex:1;min-width:0}
+.card{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;background:#fff;width:100%}
+.ic{width:40px;height:40px;border-radius:11px;background:var(--r-soft);color:var(--r);display:flex;align-items:center;justify-content:center;flex:none}
+.t{font-weight:600;font-size:calc(15px * var(--fz))}
+.d{color:var(--muted);font-size:calc(12.5px * var(--fz));margin-top:2px}
+.chk{width:26px;height:26px;border-radius:50%;border:2px solid #cfcfcf;flex:none;display:flex;align-items:center;justify-content:center}
+.chk.on{background:var(--r);border-color:var(--r);color:#fff}
+.done .t{text-decoration:line-through;color:var(--muted-2)}.done .ic{opacity:.55}
+.chip{border:1.5px solid var(--line);border-radius:99px;padding:7px 13px;font-size:13px;font-weight:600;color:var(--muted);white-space:nowrap}
+.chip.on{border-color:var(--r);color:var(--r);background:var(--r-soft)}
+.chip.fill.on{background:var(--r);color:#fff}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.tg{width:44px;height:26px;border-radius:99px;background:#d9d6d6;position:relative;flex:none;transition:background .2s}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:left .2s;box-shadow:0 1px 2px #0003}
+.tg.on{background:var(--r)}.tg.on::after{left:21px}
+.tabs{height:76px;border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:flex-start;padding-top:10px;background:#fff;flex:none}
+.tabs button{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;color:var(--muted-2);font-weight:500;width:70px}
+.tabs button.on{color:var(--r);font-weight:700}
+.bub{background:#fff;color:var(--r);border-radius:14px;padding:9px 13px;font-weight:600;font-size:13px;line-height:1.35}
+.bub.pk{background:var(--r-soft)}
+.mav{width:56px;height:56px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;flex:none}
+.pill{background:rgba(255,255,255,.2);border-radius:99px;padding:6px 12px;font-weight:700;font-size:12.5px;display:inline-flex;gap:5px;align-items:center;color:#fff}
+.pbar{height:8px;border-radius:99px;background:rgba(255,255,255,.3);overflow:hidden}.pbar i{display:block;height:100%;background:#fff;border-radius:99px;transition:width .4s}
+.bar2{height:8px;border-radius:99px;background:#f0eded;overflow:hidden}.bar2 i{display:block;height:100%;background:var(--r);border-radius:99px}
+.sec{display:flex;justify-content:space-between;align-items:baseline}.sec span{color:var(--r);font-weight:700;font-size:13px}
+.cap{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+.menu{display:flex;align-items:center;gap:12px;padding:13px 2px;border-bottom:1px solid var(--line);font-size:calc(14.5px * var(--fz));font-weight:500;width:100%}
+.menu svg.ch{margin-left:auto;color:var(--muted-2)}
+.toast{position:absolute;left:20px;right:20px;bottom:96px;background:var(--ink);color:#fff;border-radius:12px;padding:12px 16px;font-size:13.5px;font-weight:600;z-index:50;opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none;text-align:center}
+.toast.show{opacity:1;transform:none}
+.ocard{border:1.5px solid var(--line);border-radius:12px;height:46px;padding:0 12px;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600}
+.ocard svg.i{color:var(--r)}
+.ocard .ok{margin-left:auto;width:18px;height:18px;border-radius:50%;background:var(--r);color:#fff;display:none;align-items:center;justify-content:center}
+.ocard.on{border-color:var(--r);background:var(--r-soft)}.ocard.on .ok{display:flex}
+.pcard{border:1.5px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.pcard.on{border-color:var(--r);background:var(--r-soft)}
+.tag{background:var(--r);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:99px}
+.stat{background:rgba(255,255,255,.16);border-radius:12px;padding:10px 12px;flex:1}
+.stat b{font-family:var(--display);font-weight:400;font-size:24px;display:block;line-height:1.1}
+.stat span{font-size:10.5px;opacity:.9}
+.pst{background:var(--r-soft);border-radius:12px;padding:10px 12px;flex:1}
+.pst b{font-family:var(--display);font-weight:400;font-size:24px;color:var(--r);display:block;line-height:1.1}
+.pst span{font-size:10.5px;color:var(--muted)}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:8px 6px;text-align:center;font-size:12px}
+.cal .h{color:var(--muted-2);font-weight:600;font-size:11px}
+.cal i{font-style:normal;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--muted-2);font-weight:600}
+.cal i.f{background:var(--r);color:#fff}.cal i.p{background:#ecebeb;color:var(--muted)}.cal i.h0{border:2px solid var(--r);color:var(--r)}
+.selo{background:var(--r-soft);border-radius:14px;padding:12px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center}
+.selo .c{width:40px;height:40px;border-radius:50%;background:var(--r);color:#fff;display:flex;align-items:center;justify-content:center}
+.selo b{font-size:12px}.selo span{font-size:10px;color:var(--muted);line-height:1.25}
+.selo.lk{background:#f5f4f4}.selo.lk .c{background:#e4e2e2;color:#a5a5a5}.selo.lk b{color:var(--muted-2)}
+.rk{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;font-size:14px}
+.rk .p{width:16px;font-weight:800;color:var(--muted-2);font-variant-numeric:tabular-nums}
+.rk .a{width:30px;height:30px;border-radius:50%;background:#f0eded;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px}
+.rk.me{border:1.5px solid var(--r);background:var(--r-soft)}.rk.me .a{background:var(--r);color:#fff}.rk.me .p,.rk.me .x{color:var(--r)}
+.rk .x{font-weight:700;font-variant-numeric:tabular-nums}
+.conf{position:absolute;border-radius:2px;background:#fff;opacity:.85}
+.days{display:flex;gap:7px}.days button{width:34px;height:34px;border-radius:50%;background:#efeded;color:var(--muted);font-weight:700;font-size:12px;display:flex;align-items:center;justify-content:center}
+.days button.on{background:var(--r);color:#fff}
+.stp{display:flex;align-items:center;gap:10px}.stp button{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);color:var(--r);display:flex;align-items:center;justify-content:center}
+.qo{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;font-weight:600;font-size:15px;width:100%}
+.qo .k{width:30px;height:30px;border-radius:8px;background:var(--r-soft);color:var(--r);font-weight:800;display:flex;align-items:center;justify-content:center}
+.qo.on{border-color:var(--r);background:var(--r-soft)}.qo.on .k{background:var(--r);color:#fff}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--r);flex:none;align-self:flex-start;margin-top:6px}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+<defs>
+  <symbol id="torii" viewBox="0 0 100 100"><path d="M6 14q44 8 88 0l-2 10q-42 6-84 0z" fill="currentColor"/><rect x="18" y="32" width="64" height="8" rx="3" fill="currentColor"/><rect x="24" y="22" width="9" height="66" rx="2" fill="currentColor"/><rect x="67" y="22" width="9" height="66" rx="2" fill="currentColor"/><rect x="46" y="22" width="8" height="12" fill="currentColor"/><rect x="18" y="84" width="20" height="7" rx="3" fill="currentColor"/><rect x="62" y="84" width="20" height="7" rx="3" fill="currentColor"/><path d="M58 44q-12 10-8 22t-10 24h22q-6-10-2-22t-2-24z" fill="currentColor" opacity=".55"/></symbol>
+  <symbol id="m-daruma" viewBox="0 0 100 100"><circle cx="50" cy="52" r="44" fill="#c40000"/><ellipse cx="50" cy="45" rx="28" ry="24" fill="#fff"/><path d="M28 32q8-6 16-1M56 31q8-5 16 1" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="38" cy="44" r="8" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="38" cy="44" r="4.5" fill="#1a1a1a"/><circle cx="62" cy="44" r="8" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><path d="M36 58q7-5 14 0q7-5 14 0q-7 3-14 0q-7 3-14 0z" fill="#1a1a1a"/><path d="M26 80q24 10 48 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="m-daruma2" viewBox="0 0 100 100"><circle cx="50" cy="52" r="44" fill="#c40000"/><ellipse cx="50" cy="45" rx="28" ry="24" fill="#fff"/><path d="M28 32q8-6 16-1M56 31q8-5 16 1" stroke="#1a1a1a" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="38" cy="44" r="8" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="38" cy="44" r="4.5" fill="#1a1a1a"/><circle cx="62" cy="44" r="8" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="62" cy="44" r="4.5" fill="#1a1a1a"/><path d="M36 58q7-5 14 0q7-5 14 0q-7 3-14 0q-7 3-14 0z" fill="#1a1a1a"/><path d="M26 80q24 10 48 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="m-kitsune" viewBox="0 0 100 100"><path d="M18 14l18 26h28l18-26 4 40q-6 26-36 34-30-8-36-34z" fill="#fff" stroke="#c40000" stroke-width="4" stroke-linejoin="round"/><path d="M22 22l10 16M78 22l-10 16" stroke="#c40000" stroke-width="6" stroke-linecap="round"/><path d="M20 46h60l-4 10H24z" fill="#c40000"/><path d="M34 51q4-4 8 0M58 51q4-4 8 0" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="50" cy="72" r="4" fill="#1a1a1a"/></symbol>
+  <symbol id="m-sapo" viewBox="0 0 100 100"><ellipse cx="50" cy="62" rx="40" ry="30" fill="#c40000"/><circle cx="30" cy="34" r="14" fill="#c40000"/><circle cx="70" cy="34" r="14" fill="#c40000"/><rect x="12" y="28" width="76" height="12" rx="6" fill="#1a1a1a"/><path d="M86 34l10-8M86 36l10 4" stroke="#1a1a1a" stroke-width="4" stroke-linecap="round"/><circle cx="30" cy="34" r="7" fill="#fff"/><circle cx="70" cy="34" r="7" fill="#fff"/><circle cx="31" cy="35" r="3.5" fill="#1a1a1a"/><circle cx="71" cy="35" r="3.5" fill="#1a1a1a"/><path d="M32 66q18 14 36 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20V3H6.5A2.5 2.5 0 004 5.5v14zM20 17v4H6.5A2.5 2.5 0 014 18.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-dumb" viewBox="0 0 24 24"><path d="M6 7v10M3 9v6M18 7v10M21 9v6M6 12h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-fist" viewBox="0 0 24 24"><path d="M7 11V8a2 2 0 014 0v3M11 10V7a2 2 0 014 0v4M15 10a2 2 0 014 0v3a7 7 0 01-7 7h-1a6 6 0 01-6-6v-2a2 2 0 014 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-brush" viewBox="0 0 24 24"><path d="M18 2l4 4-11 11-4-4zM7 13l-3 3c-1 1-1 4-2 5 3 0 5-1 6-2l3-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-msg" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19C5 9 11 4 20 4c0 9-5 15-15 15zM5 19l8-8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path d="M12 20s-8-5-8-11a4.5 4.5 0 018-3 4.5 4.5 0 018 3c0 6-8 11-8 11z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-money" viewBox="0 0 24 24"><path d="M12 3v18M16 7c-1-1.5-2.5-2-4-2-2 0-4 1-4 3s2 3 4 3.5 4 1.5 4 3.5-2 3-4 3c-1.5 0-3-.5-4-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-flame" viewBox="0 0 24 24"><path d="M12 22c4 0 7-3 7-7 0-4-3-6-4-10-2 2-3 4-3 6-1-1-2-2-2-4-2 2-5 5-5 8 0 4 3 7 7 7z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v10a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><path d="M4 20h16M7 16v-4M12 16V8M17 16v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M2 20c1-3.5 3.5-5 7-5s6 1.5 7 5M16 4.5a3.5 3.5 0 010 7M18 15c2 .5 3.5 2 4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z" fill="currentColor"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 9a6 6 0 1112 0c0 6 3 7 3 7H3s3-1 3-7zM10 20a2 2 0 004 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-out" viewBox="0 0 24 24"><path d="M10 4H5v16h5M14 8l4 4-4 4M18 12H9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7 4h10v5a5 5 0 01-10 0zM7 6H4v2a3 3 0 003 3M17 6h3v2a3 3 0 01-3 3M12 14v4M8 21h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 11V8a4 4 0 018 0v3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 7l9 6 9-6" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path d="M12 15V3M7 8l5-5 5 5M5 13v7h14v-7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M3 8a2 2 0 012-2h2l2-2h6l2 2h2a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.5" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 8.8a15 15 0 014.2-2.6M9.5 5.2A15 15 0 0122 8.8M5 12.5a10 10 0 015-2.4M14.5 10.5a10 10 0 014.5 2M8.5 16a5 5 0 017 0M3 3l18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M9 4a3 3 0 00-3 3 3 3 0 00-2 5 3 3 0 002 5 3 3 0 006 1V5a2 2 0 00-3-1zM15 4a3 3 0 013 3 3 3 0 012 5 3 3 0 01-2 5 3 3 0 01-6 1" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M4 7V5h10v2M9 5v14M7 19h4M14 12v-1h7v1M17.5 11v8M16 19h3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+</defs>
+</svg>
+
+<div class="layout">
+<div class="stage" id="stage"><div class="phone-wrap" id="wrap"><div id="phone">
+
+<!-- 1 · Splash -->
+<section class="scr red" id="splash" data-n="1">
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding-top:120px">
+    <svg width="150" height="150" style="color:#fff"><use href="#torii"/></svg>
+    <div class="anton" style="font-size:52px;letter-spacing:10px">DOJO</div>
+    <div style="font-weight:600;font-size:15px">Sua disciplina começa aqui.</div>
+  </div>
+  <div class="foot" style="background:transparent;padding-bottom:44px">
+    <div class="row"><div class="mav"><svg width="44" height="44"><use href="#m-daruma"/></svg></div><div class="bub">Bora começar? Eu te acompanho!</div></div>
+    <button class="btn w" data-go="login">Começar</button>
+  </div>
+</section>
+
+<!-- 2 · Login -->
+<section class="scr" id="login" data-n="2" hidden>
+  <div class="hd red" style="padding-bottom:40px">
+    <div class="row" style="gap:8px"><svg width="28" height="28" style="color:#fff"><use href="#torii"/></svg><span class="anton" style="font-size:18px;letter-spacing:4px">DOJO</span></div>
+    <div class="ttl" style="margin-top:28px">SUA DISCIPLINA<br>COMEÇA AQUI.</div>
+  </div>
+  <div class="sheet">
+    <div class="h2">Entrar na sua conta</div>
+    <div><div class="lbl">Email</div><label class="inp"><input id="lg-email" type="email" placeholder="voce@email.com"></label></div>
+    <div><div class="lbl">Senha</div><label class="inp"><input id="lg-pass" type="password" placeholder="Sua senha"><button data-eye="lg-pass" aria-label="Mostrar senha" style="color:var(--muted)"><svg width="18" height="18"><use href="#i-eye"/></svg></button></label></div>
+    <button class="lnk r" style="align-self:flex-end;font-size:12px" data-go="esqueci">Esqueci minha senha</button>
+    <button class="btn" data-go="inicio" data-fade>Entrar</button>
+    <div class="grow"></div>
+    <button class="lnk" style="padding-bottom:30px" data-go="cad-nome">Não tem conta? <b>Criar conta</b></button>
+  </div>
+</section>
+
+<!-- 3 · Cadastro nome -->
+<section class="scr" id="cad-nome" data-n="3" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Passo 1 de 3</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="steps"><span class="on"></span><span></span><span></span></div>
+    <div class="ttl">A CADA PASSO,<br>SEU OBJETIVO.</div></div>
+  <div class="sheet">
+    <div><div class="h2">Como podemos te chamar?</div><div class="sub">Vale nome ou apelido.</div></div>
+    <div><div class="lbl">Nome ou apelido</div><label class="inp"><input id="cd-nome" placeholder="Ex.: Gui"></label></div>
+    <div class="grow"></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="cad-email">Próximo</button><button class="lnk" data-go="login">Já tem conta? <b>Entrar</b></button></div>
+</section>
+
+<!-- 4 · Cadastro email -->
+<section class="scr" id="cad-email" data-n="4" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Passo 2 de 3</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="steps"><span class="on"></span><span class="on"></span><span></span></div>
+    <div class="ttl">SEJA<br>BEM-VINDO!</div></div>
+  <div class="sheet">
+    <div><div class="h2">Qual é o seu email?</div><div class="sub">Você vai usar ele para entrar no app.</div></div>
+    <div><div class="lbl">Email</div><label class="inp"><input id="cd-email" type="email" placeholder="voce@email.com"></label></div>
+    <div class="grow"></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="cad-senha">Próximo</button><button class="lnk" data-go="login">Já tem conta? <b>Entrar</b></button></div>
+</section>
+
+<!-- 5 · Cadastro senha -->
+<section class="scr" id="cad-senha" data-n="5" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Passo 3 de 3</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="steps"><span class="on"></span><span class="on"></span><span class="on"></span></div>
+    <div class="ttl">FALTA POUCO,<br>TÁ QUASE LÁ!</div></div>
+  <div class="sheet">
+    <div class="h2">Crie sua senha</div>
+    <div><div class="lbl">Senha</div><label class="inp"><input id="cd-p1" type="password" placeholder="Mínimo 8 caracteres"><button data-eye="cd-p1" aria-label="Mostrar senha" style="color:var(--muted)"><svg width="18" height="18"><use href="#i-eye"/></svg></button></label></div>
+    <div><div class="lbl">Confirmar senha</div><label class="inp"><input id="cd-p2" type="password" placeholder="Repita a senha"><button data-eye="cd-p2" aria-label="Mostrar senha" style="color:var(--muted)"><svg width="18" height="18"><use href="#i-eye"/></svg></button></label></div>
+    <div class="sub" style="font-size:12px">Use letras, números e pelo menos um símbolo.</div>
+    <div class="grow"></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="objetivos">Criar conta</button><div class="lnk" style="font-size:12px">Ao criar a conta você aceita os <b>Termos de uso</b></div></div>
+</section>
+
+<!-- 6 · Objetivos (com Luta e Arte) -->
+<section class="scr" id="objetivos" data-n="6" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Último passo</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">QUAL É O<br>SEU FOCO?</div></div>
+  <div class="sheet">
+    <div><div class="h2">Escolha seus objetivos</div><div class="sub">Selecione até 3. Dá pra mudar depois.</div></div>
+    <div id="obj-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:9px"></div>
+    <div id="obj-count" style="font-size:12.5px;font-weight:700;color:var(--r)">2 de 3 selecionados</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="parceiro">Começar minha jornada</button></div>
+</section>
+
+<!-- 7 · Parceiro -->
+<section class="scr" id="parceiro" data-n="7" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Seu parceiro</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">ESCOLHA QUEM<br>VAI TE ACOMPANHAR</div></div>
+  <div class="sheet">
+    <div class="sub">O Daruma é o parceiro oficial do Dojo. Prefere outro? Dá pra trocar.</div>
+    <button class="pcard on" data-mascot="Daruma" style="flex-direction:row;text-align:left;gap:14px;padding:14px">
+      <svg width="76" height="76" style="flex:none"><use href="#m-daruma"/></svg>
+      <div><div class="row" style="gap:8px"><span class="tag">★ Principal</span><span style="font-size:11px;color:var(--r);font-weight:600">Mestre persistente</span></div>
+      <div class="anton" style="font-size:24px;color:var(--r);margin-top:4px">DARUMA</div>
+      <div class="d">Calmo e firme. Quando você falha, ele te ajuda a levantar.</div>
+      <div class="d" style="color:var(--r);font-style:italic">“Caiu? Levanta. Bora de novo.”</div></div>
+    </button>
+    <div class="lbl" style="margin:4px 0 0">Ou escolha outro parceiro</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <button class="pcard" data-mascot="Kitsune"><svg width="56" height="56"><use href="#m-kitsune"/></svg><div class="anton" style="font-size:17px">KITSUNE</div><div style="font-size:11px;font-weight:700;color:var(--r)">A estrategista</div><div class="d" style="font-style:italic">“Mais um dia, mais uma cauda.”</div></button>
+      <button class="pcard" data-mascot="Sapo Ninja"><svg width="56" height="56"><use href="#m-sapo"/></svg><div class="anton" style="font-size:17px">SAPO NINJA</div><div style="font-size:11px;font-weight:700;color:var(--r)">O zoeiro</div><div class="d" style="font-style:italic">“Até eu pulo mais que você.”</div></button>
+    </div>
+  </div>
+  <div class="foot"><button class="btn" id="pc-btn" data-go="inicio-vazio" data-fade>Escolher o Daruma</button></div>
+</section>
+
+<!-- 8 · Início -->
+<section class="scr" id="inicio" data-n="8" hidden>
+  <div class="red" style="padding:50px 20px 40px">
+    <div class="row" style="justify-content:space-between"><span style="font-size:12.5px;opacity:.9">Domingo, 8 de novembro</span>
+      <div class="row" style="gap:8px"><button class="pill" data-go="notificacoes" aria-label="Notificações"><svg width="15" height="15"><use href="#i-bell"/></svg></button><button class="pill" data-go="seq-perdida" data-fade><svg width="14" height="14"><use href="#i-flame"/></svg>12 dias</button></div></div>
+    <div class="anton" style="font-size:34px;margin-top:4px"><span>OLÁ, </span><span class="u-name">GUI</span>!</div>
+    <div class="row" style="margin-top:14px"><div class="mav"><svg width="46" height="46"><use href="#m-daruma"/></svg></div><div class="bub" id="in-bub">Metade já foi! Faltam 2 metas pra fechar o dia. Bora?</div></div>
+    <div class="row" style="justify-content:space-between;margin:16px 0 8px;font-size:12.5px;font-weight:600"><span>Progresso de hoje</span><span id="in-pct">50%</span></div>
+    <div class="pbar"><i id="in-bar" style="width:50%"></i></div>
+  </div>
+  <div class="sheet" style="padding-bottom:16px">
+    <div class="sec"><div class="h2">Metas de hoje</div><span id="in-count">2 de 4</span></div>
+    <div id="in-list" style="display:flex;flex-direction:column;gap:9px"></div>
+    <button class="btn dash" data-go="nova-meta"><svg width="18" height="18"><use href="#i-plus"/></svg>Nova meta</button>
+  </div>
+  <nav class="tabs" data-tab="inicio"></nav>
+</section>
+
+<!-- 9 · Metas -->
+<section class="scr" id="metas" data-n="9" hidden>
+  <div class="red" style="padding:52px 20px 38px">
+    <div class="row" style="justify-content:space-between"><div class="anton" style="font-size:28px">MINHAS METAS</div>
+      <div class="row" style="gap:8px"><button class="bk" data-go="agenda" aria-label="Agenda da semana"><svg width="17" height="17"><use href="#i-cal"/></svg></button><button class="bk" style="background:#fff;color:var(--r)" data-go="nova-meta" aria-label="Nova meta"><svg width="18" height="18"><use href="#i-plus"/></svg></button></div></div>
+    <div style="font-size:12.5px;opacity:.9;margin-top:4px" id="mt-sub">4 metas ativas · 2 objetivos</div>
+  </div>
+  <div class="sheet" style="padding-bottom:16px">
+    <div class="chips" id="mt-filter"><button class="chip fill on" data-f="Todas">Todas</button><button class="chip fill" data-f="Estudos">Estudos</button><button class="chip fill" data-f="Treino">Treino</button><button class="chip fill" data-f="Luta">Luta</button><button class="chip fill" data-f="Arte">Arte</button></div>
+    <div id="mt-list" style="display:flex;flex-direction:column;gap:9px"></div>
+  </div>
+  <nav class="tabs" data-tab="metas"></nav>
+</section>
+
+<!-- 10 · Progresso -->
+<section class="scr" id="progresso" data-n="10" hidden>
+  <div class="red" style="padding:52px 20px 38px">
+    <div class="row" style="justify-content:space-between"><div class="anton" style="font-size:28px">SEU PROGRESSO</div><button class="pill" data-go="desafios"><svg width="14" height="14"><use href="#i-trophy"/></svg>Ranking</button></div>
+    <div class="row" style="gap:8px;margin-top:16px"><div class="stat"><b>12</b><span>dias seguidos</span></div><div class="stat"><b>86</b><span>metas feitas</span></div><div class="stat"><b>NV 3</b><span>faixa amarela</span></div></div>
+  </div>
+  <div class="sheet" style="padding-bottom:16px">
+    <div class="sec"><div class="h2">Esta semana</div><span>22 de 28 metas</span></div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;align-items:end;height:110px">
+      <i style="height:100%;background:var(--r);border-radius:6px"></i><i style="height:100%;background:var(--r);border-radius:6px"></i><i style="height:72%;background:var(--r);border-radius:6px"></i><i style="height:100%;background:var(--r);border-radius:6px"></i><i style="height:52%;background:var(--r);border-radius:6px"></i><i style="height:76%;background:var(--r);border-radius:6px"></i><i style="height:48%;background:#f6a9a9;border-radius:6px"></i>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:10px;text-align:center;font-size:11px;color:var(--muted-2);font-weight:600;margin-top:-4px"><span>S</span><span>T</span><span>Q</span><span>Q</span><span>S</span><span>S</span><span style="color:var(--r)">D</span></div>
+    <div class="h2" style="font-size:15px">Por objetivo</div>
+    <div><div class="row" style="justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:6px"><span>Estudos</span><span style="color:var(--r)">82%</span></div><div class="bar2"><i style="width:82%"></i></div></div>
+    <div><div class="row" style="justify-content:space-between;font-size:12.5px;font-weight:600;margin-bottom:6px"><span>Treino</span><span style="color:var(--r)">64%</span></div><div class="bar2"><i style="width:64%"></i></div></div>
+    <div class="row" style="background:var(--r-soft);border-radius:12px;padding:10px 12px"><div class="mav" style="width:38px;height:38px"><svg width="32" height="32"><use href="#m-daruma"/></svg></div><div style="font-size:12.5px;font-weight:600;color:var(--r)">Domingo é teu dia mais fraco. Que tal uma meta mais leve pra ele?</div></div>
+    <button class="card" data-go="revisoes"><div class="ic"><svg width="20" height="20"><use href="#i-brain"/></svg></div><div class="grow"><div class="t">Memória</div><div class="d">3 conteúdos pra revisar hoje</div></div><svg width="18" height="18" style="color:var(--muted-2)"><use href="#i-chev"/></svg></button>
+  </div>
+  <nav class="tabs" data-tab="progresso"></nav>
+</section>
+
+<!-- 11 · Perfil -->
+<section class="scr" id="perfil" data-n="11" hidden>
+  <div class="red" style="padding:52px 20px 38px">
+    <div class="row" style="justify-content:space-between"><div class="anton" style="font-size:28px">PERFIL</div><button class="bk" data-go="config" aria-label="Configurações"><svg width="17" height="17"><use href="#i-gear"/></svg></button></div>
+    <div class="row" style="margin-top:14px"><div class="mav" style="width:52px;height:52px"><span class="anton u-ini" style="color:var(--r);font-size:24px">G</span></div><div><div style="font-weight:700;font-size:18px" class="u-name2">Gui</div><span class="pill" style="font-size:11px;padding:3px 10px;margin-top:4px">Faixa amarela · Nível 3</span></div></div>
+    <div class="row" style="justify-content:space-between;font-size:11.5px;font-weight:600;margin:14px 0 6px"><span>340 / 500 XP</span><span style="opacity:.85">Próxima: faixa laranja</span></div>
+    <div class="pbar"><i style="width:68%"></i></div>
+  </div>
+  <div class="sheet" style="padding-bottom:16px;gap:10px">
+    <div class="row" style="background:var(--r-soft);border-radius:12px;padding:10px 12px"><svg width="36" height="36"><use href="#m-daruma"/></svg><div class="grow"><div style="font-size:11px;color:var(--muted)">Seu parceiro</div><div style="font-weight:700;font-size:14px" class="u-mascot">Daruma</div></div><button class="lnk r" data-go="parceiro">Trocar</button></div>
+    <button class="sec" data-go="conquistas" style="width:100%"><div class="h2" style="font-size:15px">Conquistas</div><span>Ver todas</span></button>
+    <button class="row" data-go="conquistas" style="justify-content:space-between;width:100%">
+      <div style="text-align:center;font-size:11px;font-weight:600"><div class="ic" style="background:var(--r);color:#fff;border-radius:50%;width:46px;height:46px;margin:0 auto 4px"><svg width="20" height="20"><use href="#i-flame"/></svg></div>7 dias</div>
+      <div style="text-align:center;font-size:11px;font-weight:600"><div class="ic" style="background:var(--r);color:#fff;border-radius:50%;width:46px;height:46px;margin:0 auto 4px"><svg width="20" height="20"><use href="#i-check"/></svg></div>50 metas</div>
+      <div style="text-align:center;font-size:11px;font-weight:600"><div class="ic" style="background:var(--r);color:#fff;border-radius:50%;width:46px;height:46px;margin:0 auto 4px"><svg width="20" height="20"><use href="#i-sun"/></svg></div>Madrugador</div>
+      <div style="text-align:center;font-size:11px;font-weight:600;color:var(--muted-2)"><div class="ic" style="background:#efeded;color:#aaa;border-radius:50%;width:46px;height:46px;margin:0 auto 4px"><svg width="20" height="20"><use href="#i-lock"/></svg></div>30 dias</div>
+    </button>
+    <div>
+      <button class="menu" data-go="editar-perfil"><svg width="18" height="18"><use href="#i-target"/></svg>Meus objetivos<svg class="ch" width="16" height="16"><use href="#i-chev"/></svg></button>
+      <button class="menu" data-go="notificacoes"><svg width="18" height="18"><use href="#i-bell"/></svg>Notificações<svg class="ch" width="16" height="16"><use href="#i-chev"/></svg></button>
+      <button class="menu" data-go="config"><svg width="18" height="18"><use href="#i-gear"/></svg>Configurações<svg class="ch" width="16" height="16"><use href="#i-chev"/></svg></button>
+      <button class="menu" style="color:var(--r);border:0" data-go="login" data-fade><svg width="18" height="18"><use href="#i-out"/></svg>Sair</button>
+    </div>
+  </div>
+  <nav class="tabs" data-tab="perfil"></nav>
+</section>
+
+<!-- 12 · Nova meta -->
+<section class="scr" id="nova-meta" data-n="12" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Nova meta</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">CRIE SUA<br>NOVA META</div></div>
+  <div class="sheet" style="gap:14px">
+    <div><div class="lbl">Nome da meta</div><label class="inp"><input id="nm-nome" placeholder="Ex.: Ler 10 páginas"></label></div>
+    <div><div class="lbl">Objetivo</div><div class="chips" id="nm-obj"><button class="chip on">Estudos</button><button class="chip">Treino</button><button class="chip">Luta</button><button class="chip">Arte</button></div></div>
+    <div><div class="lbl">Frequência</div><div class="chips" id="nm-freq"><button class="chip on">Diária</button><button class="chip">Semanal</button></div></div>
+    <div><div class="lbl">Repetir nos dias</div><div class="days" id="nm-days"><button class="on">S</button><button class="on">T</button><button class="on">Q</button><button class="on">Q</button><button class="on">S</button><button>S</button><button>D</button></div></div>
+    <div class="row" style="justify-content:space-between"><div class="lbl" style="margin:0">Duração</div><div class="stp"><button id="nm-minus" aria-label="Diminuir"><svg width="16" height="16"><use href="#i-minus"/></svg></button><b id="nm-dur" style="min-width:52px;text-align:center;font-variant-numeric:tabular-nums">30 min</b><button id="nm-plus" aria-label="Aumentar"><svg width="16" height="16"><use href="#i-plus"/></svg></button></div></div>
+    <div class="row" style="background:var(--bg);border-radius:12px;padding:12px"><svg width="18" height="18" style="color:var(--r)"><use href="#i-bell"/></svg><div class="grow"><div class="t" style="font-size:14px">Lembrete</div><div class="d">Todo dia às 20:00</div></div><button class="tg on" aria-label="Lembrete"></button></div>
+  </div>
+  <div class="foot"><button class="btn" id="nm-criar">Criar meta</button></div>
+</section>
+
+<!-- 13 · Meta concluída -->
+<section class="scr red" id="concluida" data-n="13" hidden>
+  <div id="confetti" style="position:absolute;inset:0;pointer-events:none"></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:60px 24px 0;text-align:center;position:relative">
+    <div style="width:170px;height:170px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="130" height="130"><use href="#m-daruma2"/></svg></div>
+    <div class="anton" style="font-size:40px;margin-top:10px">META CUMPRIDA!</div>
+    <div style="font-weight:600" id="cc-goal">Treino de força · 30 min</div>
+    <div class="row" style="gap:8px"><span class="pill"><svg width="14" height="14"><use href="#i-star"/></svg>+20 XP</span><span class="pill"><svg width="14" height="14"><use href="#i-flame"/></svg>13 dias</span></div>
+    <div class="bub" style="margin-top:6px">“Os dois olhos pintados. É assim que se faz!” — Daruma</div>
+  </div>
+  <div class="foot" style="background:transparent;padding-bottom:36px"><button class="btn w" id="cc-cont">Continuar</button><button class="lnk" style="color:#fff;font-weight:600" data-toast="Link da conquista copiado!"><svg width="14" height="14" style="vertical-align:-2px"><use href="#i-share"/></svg> Compartilhar conquista</button></div>
+</section>
+
+<!-- 14 · Sequência perdida -->
+<section class="scr" id="seq-perdida" data-n="14" hidden>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:40px 24px 0;text-align:center">
+    <div style="position:relative;width:180px;height:140px"><svg width="90" height="90" style="position:absolute;left:0;bottom:0;transform:rotate(-80deg);opacity:.35"><use href="#m-daruma"/></svg><svg width="120" height="120" style="position:absolute;right:0;top:0"><use href="#m-daruma"/></svg></div>
+    <div class="anton" style="font-size:40px;color:var(--r)">CAIU? LEVANTA.</div>
+    <div class="sub" style="font-size:14px;max-width:300px">Sua sequência de 12 dias acabou. Acontece com todo mundo, o que importa é voltar hoje.</div>
+    <div class="row" style="background:var(--r-soft);border-radius:14px;padding:14px;width:100%;justify-content:space-around">
+      <div><div class="anton" style="font-size:26px;color:var(--r)">12 DIAS</div><div class="d">Seu recorde</div></div>
+      <div><div class="anton" style="font-size:26px;color:var(--r)">DIA 1</div><div class="d">Começa hoje</div></div>
+    </div>
+    <div class="d" style="font-style:italic">Nanakorobi yaoki: caia sete vezes, levante oito.</div>
+  </div>
+  <div class="foot"><button class="btn" data-go="inicio" data-fade>Recomeçar agora</button><button class="btn o" data-go="inicio" data-fade data-toast="Proteção usada. Sua sequência de 12 dias tá salva."><svg width="16" height="16"><use href="#i-shield"/></svg>Usar proteção (1 disponível)</button></div>
+</section>
+
+<!-- 15 · Configurações (+ acessibilidade) -->
+<section class="scr" id="config" data-n="15" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Ajustes</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">CONFIGURAÇÕES</div></div>
+  <div class="sheet" style="gap:4px;padding-bottom:20px">
+    <div class="cap" style="margin:4px 0">Notificações</div>
+    <div class="menu"><div class="grow"><div class="t" style="font-size:14px">Lembrete das metas</div><div class="d">Todo dia às 20:00</div></div><button class="tg on" aria-label="Lembrete das metas"></button></div>
+    <div class="menu"><div class="grow"><div class="t" style="font-size:14px">Mensagens do parceiro</div><div class="d">O Daruma te cobra durante o dia</div></div><button class="tg on" aria-label="Mensagens do parceiro"></button></div>
+    <div class="menu"><div class="grow"><div class="t" style="font-size:14px">Resumo semanal</div><div class="d">Domingo à noite</div></div><button class="tg" aria-label="Resumo semanal"></button></div>
+    <div class="cap" style="margin:14px 0 4px">Acessibilidade</div>
+    <div class="menu"><svg width="18" height="18" style="color:var(--r)"><use href="#i-text"/></svg><div class="grow"><div class="t" style="font-size:14px">Texto maior</div><div class="d">Aumenta as letras das listas e metas</div></div><button class="tg" id="tg-big" aria-label="Texto maior"></button></div>
+    <div class="cap" style="margin:14px 0 4px">Parceiro</div>
+    <div class="menu"><svg width="26" height="26"><use href="#m-daruma"/></svg><div class="grow t" style="font-size:14px"><span class="u-mascot">Daruma</span> · Mestre persistente</div><button class="lnk r" data-go="parceiro">Trocar</button></div>
+    <div class="cap" style="margin:14px 0 4px">Conta</div>
+    <button class="menu" data-go="editar-perfil">Editar perfil<svg class="ch" width="16" height="16"><use href="#i-chev"/></svg></button>
+    <button class="menu" data-toast="Seus dados ficam só na sua conta.">Privacidade e dados<svg class="ch" width="16" height="16"><use href="#i-chev"/></svg></button>
+    <button class="menu" style="color:var(--r);border:0;font-weight:700" data-go="login" data-fade>Sair da conta</button>
+  </div>
+</section>
+
+<!-- 16 · Esqueci a senha -->
+<section class="scr" id="esqueci" data-n="16" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Recuperar senha</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">ESQUECEU<br>A SENHA?</div></div>
+  <div class="sheet">
+    <div class="ic" style="border-radius:50%"><svg width="20" height="20"><use href="#i-mail"/></svg></div>
+    <div><div class="h2">Sem stress, acontece.</div><div class="sub">Digita o email da tua conta que a gente manda um link pra criar uma senha nova.</div></div>
+    <div><div class="lbl">Email</div><label class="inp"><input id="es-email" type="email" placeholder="voce@email.com"></label></div>
+    <button class="btn" data-go="login" data-fade data-toast="Link enviado! Confere teu email.">Enviar link</button>
+    <div class="grow"></div>
+    <button class="lnk" style="padding-bottom:30px" data-go="login">Lembrou? <b>Entrar</b></button>
+  </div>
+</section>
+
+<!-- 17 · Detalhe da meta -->
+<section class="scr" id="detalhe" data-n="17" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Detalhe da meta</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl" id="dt-title">ESTUDAR LÓGICA</div>
+    <div class="row" style="gap:6px;margin-top:12px"><span class="pill" style="font-size:11px" id="dt-obj">Estudos</span><span class="pill" style="font-size:11px" id="dt-freq">Todo dia · 45 min</span><span class="pill" style="font-size:11px">Lembrete 20:00</span></div></div>
+  <div class="sheet">
+    <div class="row" style="gap:8px"><div class="pst"><b>8</b><span>dias seguidos</span></div><div class="pst"><b>24X</b><span>concluída</span></div><div class="pst"><b>86%</b><span>de acerto</span></div></div>
+    <div class="sec"><div class="h2" style="font-size:15px">Novembro</div><div style="font-size:11px;color:var(--muted)"><span style="color:var(--r)">●</span> Feita <span style="color:#ccc;margin-left:6px">●</span> Perdida</div></div>
+    <div class="cal" id="dt-cal"></div>
+    <div class="grow"></div>
+  </div>
+  <div class="foot">
+    <div class="row" style="gap:10px"><button class="btn o" style="flex:1" data-go="timer"><svg width="16" height="16"><use href="#i-play"/></svg>Iniciar timer</button><button class="btn" style="flex:1.4" id="dt-done">Marcar como feita</button></div>
+    <div class="row" style="justify-content:center;gap:24px;font-size:13px;font-weight:600"><button class="row" style="gap:5px" data-go="nova-meta"><svg width="15" height="15"><use href="#i-edit"/></svg>Editar</button><button class="row" style="gap:5px;color:var(--r)" data-go="metas" data-fade data-toast="Meta excluída."><svg width="15" height="15"><use href="#i-trash"/></svg>Excluir</button></div>
+  </div>
+</section>
+
+<!-- 18 · Conquistas -->
+<section class="scr" id="conquistas" data-n="18" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Faixas e conquistas</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">CONQUISTAS</div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-top:14px"><i style="height:7px;border-radius:4px;background:#fff"></i><i style="height:7px;border-radius:4px;background:#f5c542"></i><i style="height:7px;border-radius:4px;background:#f08a24;opacity:.45"></i><i style="height:7px;border-radius:4px;background:#3a9d4a;opacity:.45"></i><i style="height:7px;border-radius:4px;background:#2f6fd1;opacity:.45"></i><i style="height:7px;border-radius:4px;background:#1a1a1a;opacity:.6"></i></div>
+    <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;font-size:9.5px;text-align:center;margin-top:4px;font-weight:600"><span>Branca</span><span>Amarela</span><span>Laranja</span><span>Verde</span><span>Azul</span><span>Preta</span></div>
+    <div style="font-size:12px;font-weight:600;margin-top:8px">Faixa amarela · faltam 160 XP pra laranja</div></div>
+  <div class="sheet">
+    <div class="sec"><div class="h2">Selos</div><span>6 de 9</span></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:9px">
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-flame"/></svg></div><b>7 dias</b><span>Sequência de uma semana</span></div>
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-check"/></svg></div><b>50 metas</b><span>Cumpriu 50 metas</span></div>
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-sun"/></svg></div><b>Madrugador</b><span>Meta antes das 7h</span></div>
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-book"/></svg></div><b>Estudioso</b><span>10h de estudos</span></div>
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-dumb"/></svg></div><b>Atleta</b><span>20 treinos</span></div>
+      <div class="selo"><div class="c"><svg width="18" height="18"><use href="#i-shield"/></svg></div><b>Persistente</b><span>Voltou após cair</span></div>
+      <div class="selo lk"><div class="c"><svg width="18" height="18"><use href="#i-lock"/></svg></div><b>30 dias</b><span>Um mês sem falhar</span></div>
+      <div class="selo lk"><div class="c"><svg width="18" height="18"><use href="#i-lock"/></svg></div><b>Coruja</b><span>Meta depois das 23h</span></div>
+      <div class="selo lk"><div class="c"><svg width="18" height="18"><use href="#i-lock"/></svg></div><b>Mestre</b><span>Chegue na faixa preta</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 19 · Desafios -->
+<section class="scr" id="desafios" data-n="19" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Com os amigos</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">DESAFIOS</div>
+    <div style="background:rgba(255,255,255,.16);border-radius:12px;padding:12px;margin-top:14px">
+      <div class="row" style="justify-content:space-between"><div><div style="font-weight:700;font-size:14px">Semana sem falhar</div><div style="font-size:11px;opacity:.85">Termina domingo · 4 participantes</div></div>
+      <div class="row" style="gap:0">
+        <span style="width:24px;height:24px;border-radius:50%;background:#fff;color:var(--r);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--r)">J</span><span style="width:24px;height:24px;border-radius:50%;background:#fff;color:var(--r);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--r);margin-left:-6px">F</span><span style="width:24px;height:24px;border-radius:50%;background:#fff;color:var(--r);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--r);margin-left:-6px">H</span><span style="width:24px;height:24px;border-radius:50%;background:#fff;color:var(--r);font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--r);margin-left:-6px">G</span></div></div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin:10px 0 6px"><i style="height:5px;border-radius:3px;background:#fff"></i><i style="height:5px;border-radius:3px;background:#fff"></i><i style="height:5px;border-radius:3px;background:#fff"></i><i style="height:5px;border-radius:3px;background:#fff"></i><i style="height:5px;border-radius:3px;background:#fff5"></i><i style="height:5px;border-radius:3px;background:#fff5"></i><i style="height:5px;border-radius:3px;background:#fff5"></i></div>
+      <div style="font-size:11px;font-weight:700">Dia 4 de 7 · todo mundo ainda no jogo</div>
+    </div></div>
+  <div class="sheet" style="gap:6px">
+    <div class="sec"><div class="h2" style="font-size:16px">Ranking da semana</div><span style="color:var(--muted-2);font-size:11px">XP</span></div>
+    <div class="rk"><span class="p" style="color:var(--r)">1</span><span class="a">J</span><span class="grow">Jerry</span><svg width="15" height="15" style="color:var(--gold)"><use href="#i-trophy"/></svg><span class="x">420</span></div>
+    <div class="rk me"><span class="p">2</span><span class="a">G</span><span class="grow" style="font-weight:700">Você</span><span class="x">380</span></div>
+    <div class="rk"><span class="p">3</span><span class="a">F</span><span class="grow">Fernando</span><span class="x">310</span></div>
+    <div class="rk"><span class="p">4</span><span class="a">H</span><span class="grow">Hiago</span><span class="x">260</span></div>
+    <div class="rk"><span class="p">5</span><span class="a">A</span><span class="grow">Ana</span><span class="x">190</span></div>
+    <div class="grow"></div>
+  </div>
+  <div class="foot"><button class="btn o" style="height:48px" data-toast="Link de convite copiado!"><svg width="17" height="17"><use href="#i-users"/></svg>Convidar amigos</button></div>
+</section>
+
+<!-- 20 · Nova faixa -->
+<section class="scr red" id="nova-faixa" data-n="20" hidden>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px 24px 0;text-align:center">
+    <div style="width:230px;height:230px;border-radius:50%;background:rgba(255,255,255,.1);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative">
+      <div style="width:150px;height:150px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center"><svg width="110" height="110"><use href="#m-daruma2"/></svg></div>
+      <svg width="170" height="34" viewBox="0 0 170 34" style="position:absolute;bottom:22px"><rect x="0" y="10" width="170" height="14" rx="4" fill="#f08a24"/><rect x="72" y="4" width="26" height="26" rx="4" fill="#d9731a"/><path d="M78 30l-6 4M92 30l6 4" stroke="#d9731a" stroke-width="5" stroke-linecap="round"/></svg>
+    </div>
+    <div class="anton" style="font-size:44px">NOVA FAIXA!</div>
+    <div style="font-weight:600;font-size:14px;max-width:280px">Você chegou na faixa laranja. O Daruma tá orgulhoso.</div>
+    <div class="row" style="gap:8px"><span class="pill"><svg width="14" height="14"><use href="#i-star"/></svg>Nível 4</span><span class="pill"><svg width="14" height="14"><use href="#i-shield"/></svg>+1 proteção</span></div>
+  </div>
+  <div class="foot" style="background:transparent;padding-bottom:40px"><button class="btn w" data-go="inicio" data-fade>Bora pra próxima</button></div>
+</section>
+
+<!-- 21 · Agenda semanal (NOVA) -->
+<section class="scr" id="agenda" data-n="21" hidden>
+  <div class="red" style="padding:50px 20px 38px">
+    <div class="row" style="justify-content:space-between"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="pill"><svg width="14" height="14"><use href="#i-flame"/></svg>12 dias</span></div>
+    <div style="font-size:12.5px;opacity:.9;margin-top:12px">Novembro 2026</div>
+    <div class="anton" style="font-size:32px">SUA SEMANA</div>
+    <div id="ag-week" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:14px;text-align:center"></div>
+  </div>
+  <div class="sheet" style="padding-bottom:16px">
+    <div class="sec"><div class="h2" id="ag-day">Domingo, 8</div><span>4 práticas</span></div>
+    <div class="row" style="align-items:flex-start"><div style="width:40px;color:var(--muted);font-size:12px;font-weight:600;padding-top:14px">07:00</div><button class="card done grow" data-goal="Treino de força"><div class="ic"><svg width="20" height="20"><use href="#i-dumb"/></svg></div><div class="grow"><div class="t">Treino de força</div><div class="d">30 min · Treino</div></div><span class="chk on"><svg width="14" height="14"><use href="#i-check"/></svg></span></button></div>
+    <div class="row" style="align-items:flex-start"><div style="width:40px;color:var(--muted);font-size:12px;font-weight:600;padding-top:14px">14:00</div><button class="card grow" style="border-color:var(--r);background:var(--r-soft)" data-go="timer"><div class="ic" style="background:#fff"><svg width="20" height="20"><use href="#i-book"/></svg></div><div class="grow"><div class="t">Revisar anotações</div><div class="d">15 min · Estudos</div></div><span style="font-size:10.5px;font-weight:800;color:var(--r)">AGORA ▶</span></button></div>
+    <div class="row" style="align-items:flex-start"><div style="width:40px;color:var(--muted);font-size:12px;font-weight:600;padding-top:14px">19:30</div><button class="card grow" data-goal="Treino de muay thai"><div class="ic"><svg width="20" height="20"><use href="#i-fist"/></svg></div><div class="grow"><div class="t">Treino de muay thai</div><div class="d">60 min · Luta</div></div></button></div>
+    <div class="row" style="align-items:flex-start"><div style="width:40px;color:var(--muted);font-size:12px;font-weight:600;padding-top:14px">21:00</div><button class="card grow" data-goal="Desenho livre"><div class="ic"><svg width="20" height="20"><use href="#i-brush"/></svg></div><div class="grow"><div class="t">Desenho livre</div><div class="d">20 min · Arte</div></div></button></div>
+  </div>
+  <nav class="tabs" data-tab="metas"></nav>
+</section>
+
+<!-- 22 · Timer (NOVA) -->
+<section class="scr red" id="timer" data-n="22" hidden>
+  <div class="hd" style="padding-bottom:0"><div class="bar"><button class="bk" data-go="back" aria-label="Fechar"><svg width="18" height="18"><use href="#i-x"/></svg></button><span style="font-weight:700">Revisar anotações</span><span style="width:32px"></span></div></div>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px">
+    <div style="font-size:12.5px;font-weight:700;opacity:.85;letter-spacing:1.4px">FOCO TOTAL · ESTUDOS</div>
+    <div style="position:relative;width:250px;height:250px">
+      <svg width="250" height="250" viewBox="0 0 250 250" style="position:absolute;inset:0"><circle cx="125" cy="125" r="110" fill="none" stroke="rgba(255,255,255,.2)" stroke-width="13"/><circle id="tm-ring" cx="125" cy="125" r="110" fill="none" stroke="#fff" stroke-width="13" stroke-linecap="round" stroke-dasharray="691" stroke-dashoffset="0" transform="rotate(-90 125 125)"/></svg>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center"><div class="anton" id="tm-time" style="font-size:64px;line-height:1;font-variant-numeric:tabular-nums">09:12</div><div style="font-size:13px;opacity:.85;margin-top:6px" id="tm-of">de 15:00</div></div>
+    </div>
+    <div class="row"><div class="mav" style="width:46px;height:46px"><svg width="38" height="38"><use href="#m-daruma"/></svg></div><div class="bub" id="tm-bub">Tá indo bem! Segue firme.</div></div>
+  </div>
+  <div class="foot" style="background:transparent;padding-bottom:40px">
+    <div class="row" style="justify-content:center;gap:22px">
+      <button id="tm-add" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.18);font-weight:700;font-size:12.5px;text-align:center">+5 min</button>
+      <button id="tm-pp" aria-label="Pausar" style="width:80px;height:80px;border-radius:50%;background:#fff;color:var(--r);display:flex;align-items:center;justify-content:center"><svg width="32" height="32"><use href="#i-pause"/></svg></button>
+      <button data-go="registrar" aria-label="Terminar" style="width:60px;height:60px;border-radius:50%;background:rgba(255,255,255,.18);display:flex;align-items:center;justify-content:center"><svg width="24" height="24"><use href="#i-check"/></svg></button>
+    </div>
+    <button class="btn w" data-go="registrar">Terminei, registrar prática</button>
+  </div>
+</section>
+
+<!-- 23 · Registrar prática (NOVA) -->
+<section class="scr" id="registrar" data-n="23" hidden>
+  <div class="hd red" style="padding-bottom:38px"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Registrar prática</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">COMO FOI A<br>PRÁTICA DE HOJE?</div></div>
+  <div class="sheet" style="gap:14px">
+    <div><div class="lbl">Como você quer registrar?</div><div class="chips single" id="rg-mode"><button class="chip on">Foto</button><button class="chip">Resumo</button><button class="chip">Tempo</button><button class="chip">Repetições</button></div></div>
+    <button data-toast="No app de verdade, aqui abre a câmera." style="height:128px;border:1.5px dashed var(--r);border-radius:14px;background:var(--r-soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--r);text-align:center"><svg width="30" height="30"><use href="#i-camera"/></svg><b>Tirar foto do caderno</b><span style="font-size:11.5px;color:var(--muted)">Vira material do seu quiz surpresa</span></button>
+    <div><div class="lbl">Resumo rápido (opcional)</div><label class="inp" style="height:76px;align-items:flex-start;padding-top:12px"><input id="rg-txt" placeholder="Ex.: tabela verdade, AND, OR e NOT"></label></div>
+    <div><div class="lbl">Como você se sentiu?</div><div class="chips single"><button class="chip">Difícil</button><button class="chip on">Na média</button><button class="chip">Fácil</button></div></div>
+  </div>
+  <div class="foot"><button class="btn" id="rg-save">Salvar e ganhar +20 XP</button></div>
+</section>
+
+<!-- 24 · Quiz surpresa (NOVA) -->
+<section class="scr" id="quiz" data-n="24" hidden>
+  <div class="red" style="padding:50px 20px 40px">
+    <div class="row" style="justify-content:space-between"><button class="bk" data-go="back" aria-label="Fechar"><svg width="18" height="18"><use href="#i-x"/></svg></button><span class="pill">2 de 5</span></div>
+    <div class="pbar" style="margin-top:16px"><i style="width:40%"></i></div>
+    <div class="row" style="margin-top:16px"><div class="mav" style="width:46px;height:46px"><svg width="38" height="38"><use href="#m-daruma"/></svg></div><div class="bub">Quiz surpresa! Lembra do que você estudou ontem?</div></div>
+  </div>
+  <div class="sheet" style="gap:10px">
+    <div class="cap" style="color:var(--r)">Estudar lógica · ontem</div>
+    <div style="font-size:20px;font-weight:700;line-height:1.3">Qual o resultado de <span style="color:var(--r)">VERDADEIRO AND FALSO</span>?</div>
+    <div id="qz-opts" style="display:flex;flex-direction:column;gap:9px">
+      <button class="qo"><span class="k">A</span>Verdadeiro</button>
+      <button class="qo"><span class="k">B</span>Falso</button>
+      <button class="qo"><span class="k">C</span>Depende da ordem</button>
+      <button class="qo"><span class="k">D</span>Nulo</button>
+    </div>
+  </div>
+  <div class="foot"><button class="btn" id="qz-ok" disabled data-go="resultado" data-fade>Confirmar resposta</button></div>
+</section>
+
+<!-- 25 · Resultado do quiz (NOVA) -->
+<section class="scr" id="resultado" data-n="25" hidden>
+  <div class="red" style="padding:70px 24px 44px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:10px">
+    <div class="mav" style="width:96px;height:96px"><svg width="80" height="80"><use href="#m-daruma2"/></svg></div>
+    <div class="anton" style="font-size:40px" id="rs-title">MANDOU BEM!</div>
+    <div style="opacity:.92" id="rs-sub">Você lembrou de 4 das 5 perguntas.</div>
+  </div>
+  <div class="sheet">
+    <div class="row" style="gap:10px"><div class="pst"><b>80%</b><span>Acertos</span></div><div class="pst"><b>+30</b><span>XP ganho</span></div></div>
+    <div class="sec"><div class="h2" style="font-size:16px">Pra revisar</div><span>1 tópico</span></div>
+    <div class="card"><div class="ic"><svg width="20" height="20"><use href="#i-x"/></svg></div><div class="grow"><div class="t">Operador XOR</div><div class="d">Volta no seu quiz daqui a 1 dia</div></div></div>
+    <div class="card"><div class="ic" style="background:#e8f6ee;color:var(--green)"><svg width="20" height="20"><use href="#i-check"/></svg></div><div class="grow"><div class="t">AND, OR e NOT</div><div class="d">Próxima revisão em 7 dias</div></div></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="inicio" data-fade>Continuar</button><button class="lnk r" data-go="revisoes">Ver minhas revisões</button></div>
+</section>
+
+<!-- 26 · Memória / Revisões (NOVA) -->
+<section class="scr" id="revisoes" data-n="26" hidden>
+  <div class="hd red"><div class="bar"><button class="bk" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><span class="mini">Memória</span><svg width="28" height="28"><use href="#torii"/></svg></div>
+    <div class="ttl">SUAS<br>REVISÕES</div>
+    <div style="font-size:12.5px;opacity:.9;margin-top:8px">O Dojo traz cada conteúdo de volta antes de você esquecer.</div></div>
+  <div class="sheet">
+    <div class="sec"><div class="h2" style="font-size:16px">Pra hoje</div><span>3 conteúdos</span></div>
+    <div class="card"><div class="ic"><svg width="20" height="20"><use href="#i-book"/></svg></div><div class="grow"><div class="t">Operador XOR</div><div class="d">Estudar lógica · errou ontem</div></div><span class="tag">Hoje</span></div>
+    <div class="card"><div class="ic"><svg width="20" height="20"><use href="#i-msg"/></svg></div><div class="grow"><div class="t">Verbos irregulares</div><div class="d">Inglês · 3ª revisão</div></div><span class="tag">Hoje</span></div>
+    <div class="card"><div class="ic"><svg width="20" height="20"><use href="#i-fist"/></svg></div><div class="grow"><div class="t">Sequência jab-direto-low</div><div class="d">Muay thai · foto do treino</div></div><span class="tag">Hoje</span></div>
+    <div class="sec" style="margin-top:6px"><div class="h2" style="font-size:16px">Próximos dias</div><span style="color:var(--muted)">5</span></div>
+    <div class="card"><div class="ic" style="background:#f4f3f3;color:var(--muted)"><svg width="20" height="20"><use href="#i-book"/></svg></div><div class="grow"><div class="t">AND, OR e NOT</div><div class="d">Em 7 dias</div></div></div>
+    <div class="card"><div class="ic" style="background:#f4f3f3;color:var(--muted)"><svg width="20" height="20"><use href="#i-brush"/></svg></div><div class="grow"><div class="t">Sombreamento com grafite</div><div class="d">Em 3 dias</div></div></div>
+  </div>
+  <div class="foot"><button class="btn" data-go="quiz">Fazer quiz agora</button></div>
+</section>
+
+<!-- 27 · Notificações (NOVA) -->
+<section class="scr" id="notificacoes" data-n="27" hidden>
+  <div style="padding:52px 20px 10px;display:flex;align-items:center;gap:12px"><button class="bk l" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><div class="h2 grow">Notificações</div><button class="lnk r" id="nt-read">Marcar lidas</button></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:9px;padding-top:8px">
+    <div class="cap">Hoje</div>
+    <button class="card nt" style="align-items:flex-start;border-color:var(--r-line)" data-go="inicio"><div class="ic"><svg width="20" height="20"><use href="#i-flame"/></svg></div><div class="grow"><div class="t">Sua sequência tá em risco</div><div class="d">Falta 1 meta pra manter os 12 dias. Bora?</div></div><span class="dot"></span></button>
+    <button class="card nt" style="align-items:flex-start;border-color:var(--r-line)" data-go="quiz"><div class="ic"><svg width="20" height="20"><use href="#i-brain"/></svg></div><div class="grow"><div class="t">Quiz surpresa liberado</div><div class="d">5 perguntas sobre o que você estudou ontem.</div></div><span class="dot"></span></button>
+    <button class="card" style="align-items:flex-start" data-go="agenda"><div class="ic"><svg width="20" height="20"><use href="#i-cal"/></svg></div><div class="grow"><div class="t">Revisar anotações em 15 min</div><div class="d">Lembrete da sua agenda · 13:45</div></div></button>
+    <div class="cap" style="margin-top:6px">Ontem</div>
+    <button class="card" style="align-items:flex-start" data-go="conquistas"><div class="ic" style="background:#fff6dc;color:var(--gold)"><svg width="20" height="20"><use href="#i-trophy"/></svg></div><div class="grow"><div class="t">Nova conquista: 7 dias</div><div class="d">Uma semana inteira sem falhar. Respeito.</div></div></button>
+    <button class="card" style="align-items:flex-start" data-go="desafios"><div class="ic"><svg width="20" height="20"><use href="#i-users"/></svg></div><div class="grow"><div class="t">Jerry tá na frente no desafio</div><div class="d">40 XP de diferença. Vai deixar?</div></div></button>
+  </div>
+</section>
+
+<!-- 28 · Editar perfil (NOVA) -->
+<section class="scr" id="editar-perfil" data-n="28" hidden>
+  <div style="padding:52px 20px 6px;display:flex;align-items:center;gap:12px"><button class="bk l" data-go="back" aria-label="Voltar"><svg width="18" height="18"><use href="#i-back"/></svg></button><div class="h2">Editar perfil</div></div>
+  <div class="sheet" style="margin-top:0;border-radius:0;gap:14px">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+      <div style="position:relative;width:92px;height:92px;border-radius:50%;background:var(--r);color:#fff;display:flex;align-items:center;justify-content:center"><span class="anton u-ini" style="font-size:38px">G</span>
+        <span style="position:absolute;right:-2px;bottom:-2px;width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid var(--r);color:var(--r);display:flex;align-items:center;justify-content:center"><svg width="16" height="16"><use href="#i-camera"/></svg></span></div>
+      <button class="lnk r" data-toast="No app de verdade, aqui abre a galeria.">Trocar foto</button>
+    </div>
+    <div><div class="lbl">Nome</div><label class="inp"><input id="ep-nome" value="Gui"></label></div>
+    <div><div class="lbl">Email</div><label class="inp"><input id="ep-email" type="email" value="gui@email.com"></label></div>
+    <div><div class="lbl">Seus objetivos</div><div class="chips" id="ep-obj"></div></div>
+  </div>
+  <div class="foot"><button class="btn" id="ep-save">Salvar alterações</button></div>
+</section>
+
+<!-- 29 · Início vazio (NOVA) -->
+<section class="scr" id="inicio-vazio" data-n="29" hidden>
+  <div class="red" style="padding:50px 20px 40px">
+    <div class="row" style="justify-content:space-between"><span style="font-size:12.5px;opacity:.9">Domingo, 8 de novembro</span><span class="pill"><svg width="14" height="14"><use href="#i-flame"/></svg>0 dias</span></div>
+    <div class="anton" style="font-size:34px;margin-top:4px">OLÁ, <span class="u-name">GUI</span>!</div>
+    <div class="row" style="margin-top:14px"><div class="mav"><svg width="46" height="46"><use href="#m-daruma"/></svg></div><div class="bub">Todo faixa preta já foi faixa branca. Cria tua primeira meta!</div></div>
+  </div>
+  <div class="sheet" style="align-items:center;text-align:center;justify-content:center;gap:14px">
+    <div style="width:110px;height:110px;border-radius:50%;background:var(--r-soft);display:flex;align-items:center;justify-content:center;color:var(--r)"><svg width="52" height="52"><use href="#i-target"/></svg></div>
+    <div class="h2" style="font-size:21px">Nenhuma meta ainda</div>
+    <div class="sub" style="font-size:14px;max-width:290px">Comece pequeno: uma meta de 10 minutos por dia já conta pra sua sequência.</div>
+    <button class="btn" id="iv-create"><svg width="18" height="18"><use href="#i-plus"/></svg>Criar primeira meta</button>
+    <button class="lnk r" data-go="inicio" data-fade data-toast="4 metas sugeridas adicionadas.">Usar metas sugeridas pros meus objetivos</button>
+  </div>
+  <nav class="tabs" data-tab="inicio"></nav>
+</section>
+
+<!-- 30 · Sem conexão (NOVA) -->
+<section class="scr" id="sem-conexao" data-n="30" hidden>
+  <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:24px;gap:16px">
+    <div style="position:relative"><div style="width:150px;height:150px;border-radius:50%;background:var(--r-soft);display:flex;align-items:center;justify-content:center"><svg width="108" height="108"><use href="#m-daruma"/></svg></div>
+      <span style="position:absolute;right:0;bottom:6px;width:46px;height:46px;border-radius:50%;background:var(--r);color:#fff;display:flex;align-items:center;justify-content:center;border:4px solid #fff"><svg width="22" height="22"><use href="#i-wifi"/></svg></span></div>
+    <div class="anton" style="font-size:36px;color:var(--r)">SEM CONEXÃO</div>
+    <div class="sub" style="font-size:14px;max-width:300px">Calma, nada se perdeu. Suas metas de hoje continuam salvas no celular e sincronizam quando a internet voltar.</div>
+  </div>
+  <div class="foot" style="padding-bottom:40px"><button class="btn" data-go="inicio" data-fade>Tentar de novo</button><button class="btn o" data-go="inicio" data-fade data-toast="Modo offline: tuas metas continuam salvas.">Continuar offline</button></div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div></div></div>
+
+<aside class="panel">
+  <div class="brand"><div class="brand-logo"><svg width="30" height="30" style="color:#fff"><use href="#torii"/></svg></div><div><h1>DOJO</h1><p>Protótipo navegável · 30 telas</p></div></div>
+  <p class="hint">Clica nos botões do celular pra navegar, como no app. Ou pula direto pra qualquer tela pela lista.</p>
+  <button class="restart" id="restart">Recomeçar do Splash</button>
+  <div id="map"></div>
+</aside>
+</div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const ICON={Estudos:'i-book',Treino:'i-dumb',Luta:'i-fist',Arte:'i-brush'};
+const S={ goals:[
+  {n:'Estudar lógica',o:'Estudos',dur:45,fq:'Todo dia',done:true},
+  {n:'Treino de força',o:'Treino',dur:30,fq:'Seg, qua, sex',done:true},
+  {n:'Revisar anotações',o:'Estudos',dur:15,fq:'Seg a sex',done:false},
+  {n:'Alongamento',o:'Treino',dur:10,fq:'Todo dia',done:false}],
+  objs:['Estudos','Treino'], filter:'Todas', mascot:'Daruma', beltShown:false, first:false, last:null };
+
+/* ---------- navegação ---------- */
+const hist=[]; let cur='splash';
+const tabsHTML=`<button data-tab-go="inicio"><svg width="23" height="23"><use href="#i-home"/></svg>Início</button><button data-tab-go="metas"><svg width="23" height="23"><use href="#i-target"/></svg>Metas</button><button data-tab-go="progresso"><svg width="23" height="23"><use href="#i-chart"/></svg>Progresso</button><button data-tab-go="perfil"><svg width="23" height="23"><use href="#i-user"/></svg>Perfil</button>`;
+$$('.tabs').forEach(t=>{t.innerHTML=tabsHTML;t.querySelector(`[data-tab-go="${t.dataset.tab}"]`).classList.add('on')});
+
+function show(id,anim){
+  const el=document.getElementById(id); if(!el||id===cur&&!anim) return;
+  const prev=document.getElementById(cur);
+  if(prev) prev.hidden=true;
+  el.hidden=false; el.classList.remove('in-r','in-l','in-f'); void el.offsetWidth;
+  if(anim) el.classList.add(anim);
+  cur=id; onEnter(id); markMap();
+  try{ if(location.hash.slice(1)!==id) history.replaceState(null,'','#'+id) }catch(e){}
+}
+function go(id,opt={}){
+  if(id==='back'){ const p=hist.pop(); show(p||'inicio','in-l'); return; }
+  if(!opt.replace) hist.push(cur);
+  show(id, opt.anim||'in-r');
+}
+let tt; function toast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('show'),2200)}
+
+document.addEventListener('click',e=>{
+  const tab=e.target.closest('[data-tab-go]');
+  if(tab){ hist.length=0; show(tab.dataset.tabGo,'in-f'); return; }
+  const b=e.target.closest('[data-go],[data-toast]');
+  if(!b||!$('#phone').contains(b)) return;
+  if(b.dataset.goal){ openDetail(b.dataset.goal); return; }
+  if(b.dataset.go) go(b.dataset.go,{anim:b.hasAttribute('data-fade')?'in-f':'in-r'});
+  if(b.dataset.toast) setTimeout(()=>toast(b.dataset.toast), b.dataset.go?220:0);
+});
+$$('[data-goal]').forEach(b=>b.addEventListener('click',()=>openDetail(b.dataset.goal)));
+
+/* ---------- interações genéricas ---------- */
+$$('.tg').forEach(t=>t.addEventListener('click',()=>t.classList.toggle('on')));
+$('#tg-big').addEventListener('click',e=>{ $('#phone').style.setProperty('--fz', e.currentTarget.classList.contains('on')?1.18:1); toast(e.currentTarget.classList.contains('on')?'Texto maior ativado.':'Texto no tamanho padrão.'); });
+$$('[data-eye]').forEach(b=>b.addEventListener('click',e=>{e.preventDefault();const i=document.getElementById(b.dataset.eye);i.type=i.type==='password'?'text':'password'}));
+$$('.chips.single, #nm-obj, #nm-freq').forEach(g=>g.addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;g.querySelectorAll('.chip').forEach(x=>x.classList.remove('on'));c.classList.add('on')}));
+$('#nm-days').addEventListener('click',e=>{const d=e.target.closest('button');if(d)d.classList.toggle('on')});
+let dur=30; const setDur=()=>$('#nm-dur').textContent=dur+' min';
+$('#nm-minus').addEventListener('click',()=>{dur=Math.max(5,dur-5);setDur()});
+$('#nm-plus').addEventListener('click',()=>{dur=Math.min(180,dur+5);setDur()});
+
+/* ---------- objetivos (6) ---------- */
+const OBJ=[['Estudos','i-book'],['Treino','i-dumb'],['Luta','i-fist'],['Arte','i-brush'],['Idiomas','i-msg'],['Sono','i-moon'],['Alimentação','i-leaf'],['Saúde mental','i-heart'],['Finanças','i-money'],['Foco','i-target']];
+function renderObj(){
+  $('#obj-grid').innerHTML=OBJ.map(([n,i])=>`<button class="ocard${S.objs.includes(n)?' on':''}" data-o="${n}"><svg class="i" width="17" height="17"><use href="#${i}"/></svg>${n}<span class="ok"><svg width="11" height="11"><use href="#i-check"/></svg></span></button>`).join('');
+  $('#obj-count').textContent=`${S.objs.length} de 3 selecionados`;
+  $('#ep-obj').innerHTML=OBJ.map(([n])=>`<button class="chip fill${S.objs.includes(n)?' on':''}" data-o="${n}">${n}</button>`).join('');
+}
+function toggleObj(n){
+  if(S.objs.includes(n)) S.objs=S.objs.filter(x=>x!==n);
+  else if(S.objs.length>=3){ toast('Máximo de 3 objetivos. Tira um pra escolher outro.'); return; }
+  else S.objs.push(n);
+  renderObj();
+}
+$('#obj-grid').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(c)toggleObj(c.dataset.o)});
+$('#ep-obj').addEventListener('click',e=>{const c=e.target.closest('[data-o]');if(c)toggleObj(c.dataset.o)});
+
+/* ---------- parceiro (7) ---------- */
+$$('[data-mascot]').forEach(c=>c.addEventListener('click',()=>{
+  $$('[data-mascot]').forEach(x=>x.classList.remove('on')); c.classList.add('on');
+  S.mascot=c.dataset.mascot; $('#pc-btn').textContent=(S.mascot==='Daruma'?'Escolher o ':S.mascot==='Kitsune'?'Escolher a ':'Escolher o ')+S.mascot;
+  $$('.u-mascot').forEach(x=>x.textContent=S.mascot);
+}));
+$('#pc-btn').addEventListener('click',()=>{ S.first=true; },true);
+
+/* ---------- início (8) e metas (9) ---------- */
+function goalCard(g,i,withChk){
+  return `<div class="card${g.done?' done':''}" style="padding:10px 12px"><button class="row grow" style="gap:12px" data-open="${i}"><div class="ic"><svg width="20" height="20"><use href="#${ICON[g.o]||'i-target'}"/></svg></div><div class="grow"><div class="t">${g.n}</div><div class="d">${withChk?g.dur+' min · '+g.o:g.fq+' · '+g.dur+' min'}</div></div></button>${withChk?`<button class="chk${g.done?' on':''}" data-chk="${i}" aria-label="Marcar ${g.n} como feita">${g.done?'<svg width="14" height="14"><use href="#i-check"/></svg>':''}</button>`:`<svg width="18" height="18" style="color:var(--muted-2)"><use href="#i-chev"/></svg>`}</div>`;
+}
+function renderHome(){
+  const tot=S.goals.length, d=S.goals.filter(g=>g.done).length, p=tot?Math.round(d/tot*100):0;
+  $('#in-list').innerHTML=S.goals.map((g,i)=>goalCard(g,i,true)).join('');
+  $('#in-count').textContent=`${d} de ${tot}`; $('#in-pct').textContent=p+'%'; $('#in-bar').style.width=p+'%';
+  const left=tot-d;
+  $('#in-bub').textContent= left===0?'Dia fechado! Os dois olhos pintados.': d===0?'Bora começar? A primeira meta é a mais difícil.': p>=50?`${p===50?'Metade já foi!':'Tá quase!'} Falta${left>1?'m':''} ${left} meta${left>1?'s':''} pra fechar o dia. Bora?`:`Já foi ${d}. Faltam ${left} metas, bora?`;
+}
+function renderMetas(){
+  const list=S.goals.map((g,i)=>[g,i]).filter(([g])=>S.filter==='Todas'||g.o===S.filter);
+  const groups={}; list.forEach(([g,i])=>{(groups[g.o]=groups[g.o]||[]).push([g,i])});
+  $('#mt-list').innerHTML=Object.keys(groups).length?Object.entries(groups).map(([o,arr])=>`<div class="cap" style="margin-top:4px">${o}</div>`+arr.map(([g,i])=>goalCard({...g,done:false},i,false)).join('')).join(''):`<div class="sub" style="text-align:center;padding:30px 0">Nenhuma meta de ${S.filter} ainda.<br><button class="lnk r" data-go="nova-meta" style="margin-top:8px">Criar uma agora</button></div>`;
+  const os=new Set(S.goals.map(g=>g.o)).size;
+  $('#mt-sub').textContent=`${S.goals.length} metas ativas · ${os} objetivo${os>1?'s':''}`;
+}
+$('#mt-filter').addEventListener('click',e=>{const c=e.target.closest('.chip');if(!c)return;$$('#mt-filter .chip').forEach(x=>x.classList.remove('on'));c.classList.add('on');S.filter=c.dataset.f;renderMetas()});
+document.addEventListener('click',e=>{
+  const ck=e.target.closest('[data-chk]');
+  if(ck){ const g=S.goals[+ck.dataset.chk]; if(g.done){ g.done=false; renderHome(); return; } completeGoal(g); return; }
+  const op=e.target.closest('[data-open]');
+  if(op){ openDetail(S.goals[+op.dataset.open].n); }
+});
+function completeGoal(g){ g.done=true; S.last=g; renderHome(); $('#cc-goal').textContent=`${g.n} · ${g.dur} min`; go('concluida',{anim:'in-f'}); }
+$('#cc-cont').addEventListener('click',()=>{
+  const all=S.goals.every(g=>g.done);
+  if(all&&!S.beltShown){ S.beltShown=true; hist.length=0; show('nova-faixa','in-f'); }
+  else { hist.length=0; show('inicio','in-f'); }
+});
+
+/* ---------- detalhe (17) ---------- */
+function openDetail(name){
+  const g=S.goals.find(x=>x.n===name)||{n:name,o:name.includes('muay')?'Luta':name.includes('Desenho')?'Arte':'Treino',dur:name.includes('muay')?60:20,fq:'Seg a sex'};
+  S.detail=g; $('#dt-title').textContent=g.n.toUpperCase(); $('#dt-obj').textContent=g.o; $('#dt-freq').textContent=`${g.fq} · ${g.dur} min`;
+  $('#dt-done').textContent=g.done?'Feita hoje ✓':'Marcar como feita';
+  go('detalhe');
+}
+$('#dt-done').addEventListener('click',()=>{ const g=S.goals.find(x=>x===S.detail); if(g&&!g.done){ completeGoal(g); } else if(!g){ $('#cc-goal').textContent=`${S.detail.n} · ${S.detail.dur} min`; go('concluida',{anim:'in-f'}); } else toast('Essa meta já foi feita hoje.'); });
+(function cal(){
+  let h=['D','S','T','Q','Q','S','S'].map(x=>`<span class="h">${x}</span>`).join('');
+  for(let d=1;d<=30;d++){ const c=d===3?'p':d<=8?'f':d===9?'h0':''; h+=`<i class="${c}">${d}</i>`; }
+  $('#dt-cal').innerHTML=h;
+})();
+
+/* ---------- nova meta (12) ---------- */
+$('#iv-create').addEventListener('click',()=>{ S.first=true; go('nova-meta'); });
+$('#nm-criar').addEventListener('click',()=>{
+  const n=$('#nm-nome').value.trim()||'Ler 10 páginas';
+  const o=$('#nm-obj .chip.on').textContent; const sem=$('#nm-freq .chip.on').textContent==='Semanal';
+  const days=$$('#nm-days button.on').length;
+  const ng={n,o,dur,fq:sem?'1x por semana':days===7?'Todo dia':days+' dias por semana',done:false};
+  if(S.first) S.goals=[ng]; else S.goals.push(ng);
+  $('#nm-nome').value=''; renderHome(); renderMetas(); hist.length=0;
+  if(S.first){ S.first=false; show('inicio','in-f'); } else show('metas','in-f');
+  setTimeout(()=>toast(`Meta “${n}” criada!`),200);
+});
+
+/* ---------- agenda (21) ---------- */
+(function week(){
+  const ds=['D','S','T','Q','Q','S','S']; let h='';
+  for(let i=0;i<7;i++){ const d=8+i, on=i===0; h+=`<button style="display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;opacity:${on?1:.85}" data-day="${d}">${ds[i]}<span style="width:38px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font:${on?800:600} 15px var(--body);${on?'background:#fff;color:var(--r)':''}">${d}</span></button>`; }
+  $('#ag-week').innerHTML=h;
+  $('#ag-week').addEventListener('click',e=>{const b=e.target.closest('[data-day]');if(!b)return;$$('#ag-week span').forEach(s=>{s.style.background='';s.style.color='';s.style.fontWeight=600});const s=b.querySelector('span');s.style.background='#fff';s.style.color='var(--r)';s.style.fontWeight=800;const names=['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];$('#ag-day').textContent=names[b.dataset.day-8]+', '+b.dataset.day});
+})();
+
+/* ---------- timer (22) ---------- */
+let total=900, left=552, running=true, iv=null;
+function drawT(){ const m=String(Math.floor(left/60)).padStart(2,'0'), s=String(left%60).padStart(2,'0'); $('#tm-time').textContent=`${m}:${s}`; $('#tm-of').textContent=`de ${Math.round(total/60)}:00`; $('#tm-ring').style.strokeDashoffset=691*(left/total); $('#tm-bub').textContent=left<=0?'Fechou! Registra aí.':running?`Tá indo bem! Mais ${Math.ceil(left/60)} min e fecha.`:'Pausou? Respira e volta.'; }
+function tick(){ if(running&&left>0){left--;drawT()} }
+$('#tm-pp').addEventListener('click',()=>{running=!running;$('#tm-pp use').setAttribute('href',running?'#i-pause':'#i-play');$('#tm-pp').setAttribute('aria-label',running?'Pausar':'Continuar');drawT()});
+$('#tm-add').addEventListener('click',()=>{total+=300;left+=300;drawT()});
+
+/* ---------- registrar (23), quiz (24) ---------- */
+$('#rg-save').addEventListener('click',()=>{ const g=S.goals.find(x=>x.n==='Revisar anotações')||S.goals[0]; if(!g.done){ completeGoal(g);} else { $('#cc-goal').textContent=`${g.n} · ${g.dur} min`; go('concluida',{anim:'in-f'}); } });
+$('#qz-opts').addEventListener('click',e=>{const q=e.target.closest('.qo');if(!q)return;$$('#qz-opts .qo').forEach(x=>x.classList.remove('on'));q.classList.add('on');$('#qz-ok').disabled=false});
+
+/* ---------- editar perfil (28) ---------- */
+$('#ep-save').addEventListener('click',()=>{ const n=$('#ep-nome').value.trim()||'Gui'; $$('.u-name').forEach(x=>x.textContent=n.toUpperCase()); $$('.u-name2').forEach(x=>x.textContent=n); $$('.u-ini').forEach(x=>x.textContent=n[0].toUpperCase()); renderObj(); go('back'); setTimeout(()=>toast('Perfil atualizado.'),220); });
+$('#nt-read').addEventListener('click',()=>{$$('#notificacoes .dot').forEach(d=>d.remove());$$('#notificacoes .nt').forEach(c=>c.style.borderColor='');toast('Tudo lido.')});
+$('#cad-nome .btn').addEventListener('click',()=>{const n=$('#cd-nome').value.trim(); if(n){$('#ep-nome').value=n;$$('.u-name').forEach(x=>x.textContent=n.toUpperCase());$$('.u-name2').forEach(x=>x.textContent=n);$$('.u-ini').forEach(x=>x.textContent=n[0].toUpperCase());}},true);
+
+/* ---------- ao entrar numa tela ---------- */
+function onEnter(id){
+  clearInterval(iv);
+  if(id==='inicio') renderHome();
+  if(id==='metas') renderMetas();
+  if(id==='timer'){ drawT(); iv=setInterval(tick,1000); }
+  if(id==='concluida') confetti();
+  if(id==='quiz'){ $$('#qz-opts .qo').forEach(x=>x.classList.remove('on')); $('#qz-ok').disabled=true; }
+}
+function confetti(){ const c=$('#confetti'); c.innerHTML=''; for(let i=0;i<18;i++){ const s=document.createElement('i'); s.className='conf'; s.style.cssText=`left:${(i*53)%370+10}px;top:${(i*97)%420+30}px;width:${i%3?6:10}px;height:${i%3?10:6}px;transform:rotate(${i*37}deg)`; c.appendChild(s);} }
+
+/* ---------- mapa de telas ---------- */
+const GROUPS=[
+  ['Entrada',['splash','login','cad-nome','cad-email','cad-senha','esqueci']],
+  ['Primeiro acesso',['objetivos','parceiro','inicio-vazio']],
+  ['Dia a dia',['inicio','metas','agenda','nova-meta','detalhe']],
+  ['Ciclo da prática',['timer','registrar','concluida','nova-faixa']],
+  ['Memória',['revisoes','quiz','resultado']],
+  ['Evolução',['progresso','conquistas','desafios','seq-perdida']],
+  ['Conta',['perfil','config','notificacoes','editar-perfil']],
+  ['Estados',['sem-conexao']]];
+const NAMES={splash:'Splash',login:'Login','cad-nome':'Cadastro – nome','cad-email':'Cadastro – email','cad-senha':'Cadastro – senha',esqueci:'Esqueci a senha',objetivos:'Escolher objetivos',parceiro:'Escolher parceiro','inicio-vazio':'Início vazio',inicio:'Início',metas:'Metas',agenda:'Agenda semanal','nova-meta':'Nova meta',detalhe:'Detalhe da meta',timer:'Timer da prática',registrar:'Registrar prática',concluida:'Meta concluída','nova-faixa':'Nova faixa',revisoes:'Revisões (memória)',quiz:'Quiz surpresa',resultado:'Resultado do quiz',progresso:'Progresso',conquistas:'Conquistas',desafios:'Desafios','seq-perdida':'Sequência perdida',perfil:'Perfil',config:'Configurações',notificacoes:'Notificações','editar-perfil':'Editar perfil','sem-conexao':'Sem conexão'};
+$('#map').innerHTML=GROUPS.map(([g,ids])=>`<div class="grp" style="margin-bottom:14px"><h2>${g}</h2><ul>${ids.map(id=>{const n=+document.getElementById(id).dataset.n;return `<li><button data-map="${id}"><span class="n">${n}</span>${NAMES[id]}${n>20?'<span class="new">NOVA</span>':''}</button></li>`}).join('')}</ul></div>`).join('');
+$('#map').addEventListener('click',e=>{const b=e.target.closest('[data-map]');if(!b)return;hist.length=0;if(b.dataset.map==='detalhe'){openDetail('Estudar lógica');return}show(b.dataset.map,'in-f')});
+function markMap(){ $$('[data-map]').forEach(b=>b.classList.toggle('cur',b.dataset.map===cur)); }
+$('#restart').addEventListener('click',()=>{try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}location.reload()});
+
+/* ---------- escala do celular ---------- */
+function fit(){
+  const narrow=innerWidth<=760;
+  const availW=innerWidth-32-22, availH=narrow?Infinity:innerHeight-40-22;
+  const s=Math.min(1,availW/390,availH/844);
+  $('#phone').style.transform=`scale(${s})`;
+  $('#wrap').style.width=390*s+'px'; $('#wrap').style.height=844*s+'px';
+  $('#wrap').style.borderRadius=46*s+'px';
+}
+addEventListener('resize',fit); fit();
+
+renderObj(); renderHome(); renderMetas();
+const start=(location.hash||'').slice(1);
+document.getElementById('splash').hidden=true; cur=null;
+show(document.getElementById(start)&&document.getElementById(start).classList.contains('scr')?start:'splash');
+addEventListener('hashchange',()=>{const h=location.hash.slice(1);if(h!==cur&&document.getElementById(h)&&document.getElementById(h).classList.contains('scr')){hist.length=0;show(h,'in-f')}});
+})();
+</script>
